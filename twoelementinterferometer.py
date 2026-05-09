@@ -3,13 +3,13 @@ import numpy as np
 
 class TwoElementInterferometer(Scene):
     def construct(self):
-        # --- 1. Title Sequence ---
+        # Title
         title = Text("The two-element interferometer", color=BLUE)
         self.play(Write(title))
         self.wait(1)
         self.play(FadeOut(title))
         
-        # --- 2. Physical Setup ---
+        # Antennas
         BASELINE = 6
         self.square = Square()
         self.circle = Circle()
@@ -93,7 +93,7 @@ class TwoElementInterferometer(Scene):
         self.wait(0.5)
         self.play(FadeOut(wavefront_label))
 
-        # --- 4. FIRST ZOOM OUT & CIRCUIT DRAWING ---
+        # Setup Observatory
         observatory = VGroup(self.antennas, baseline_arrow, baseline_label)
         self.play(observatory.animate.scale(0.75).shift(UP * 1.5))
         
@@ -128,7 +128,7 @@ class TwoElementInterferometer(Scene):
             Write(v1_label), Write(v2_label)
         )
 
-        # --- 5. CONTINUOUS GLOW DOTS UPDATER ---
+        # GlowDots
         def get_glow_dot():
             glow = VGroup()
             for r in np.linspace(0.03, 0.15, 4):
@@ -139,7 +139,7 @@ class TwoElementInterferometer(Scene):
         signal_manager = Mobject()
         signal_manager.time = 0
         signal_manager.last_spawn = 0
-        signal_manager.dot_scale = 1.0 # Added to shrink dots during the final zoom
+        signal_manager.dot_scale = 1.0 
         signal_dots = VGroup()
         self.add(signal_manager, signal_dots)
 
@@ -148,11 +148,11 @@ class TwoElementInterferometer(Scene):
             if mob.time - mob.last_spawn > 1.2:
                 # Multiply by our dynamic scale factor
                 d1 = get_glow_dot().scale(mob.dot_scale)
-                d1.path = wire1 # FIXED: Using the drawn wire instead of the hidden path
+                d1.path = wire1 
                 d1.alpha = 0
                 
                 d2 = get_glow_dot().scale(mob.dot_scale)
-                d2.path = wire2 # FIXED: Using the drawn wire instead of the hidden path
+                d2.path = wire2 
                 d2.alpha = 0
                 
                 signal_dots.add(d1, d2)
@@ -167,7 +167,7 @@ class TwoElementInterferometer(Scene):
 
         signal_manager.add_updater(update_signals)
 
-        # --- 6. GEOMETRY OVERLAY ---
+        # Geometry Vectors & Projections
         s0_start = self.a1.get_end()
         s0_dir = (UP + RIGHT) / np.linalg.norm(UP + RIGHT) # Unit vector for 45 degrees
         b_vec = self.a2.get_end() - self.a1.get_end()
@@ -204,7 +204,7 @@ class TwoElementInterferometer(Scene):
         self.play(Create(s_0_dashed_line), Create(perp_line),run_time = 1)
         self.play(Create(right_angle), Write(proj_label), run_time=1)
         self.wait(1)
-        # --- 7. EQUATIONS ---
+        # Equations
         delay_eq = MathTex(
             r"\tau = \frac{\vec{b} \cdot \hat{s}_0}{c} = \frac{b \cos\theta}{c}"
         ).to_corner(UL)
@@ -252,10 +252,8 @@ class TwoElementInterferometer(Scene):
         self.play(ReplacementTransform(corr_eq_3, corr_eq_4))
         self.wait(3)
         self.play(FadeOut(corr_eq_4))
-
-        # --- 8. FINAL ZOOM & SKY DOME FRINGES ---
         
-        # Group literally everything currently on screen together
+        # Group everything currently on screen together
         full_system = VGroup(
             observatory, correlator, wire1, wire2, v1_label, v2_label,
             s0_vector, s0_label, ref_line, theta_angle, theta_label, s_0_dashed_line, perp_line, proj_label,right_angle
@@ -277,9 +275,7 @@ class TwoElementInterferometer(Scene):
         self.play(Create(dome), Write(dome_label))
         
         # Create the fringe lobe pattern
-        # k acts as the spatial frequency term (omega * b / c)
         b_i = 16
-        nu = 9e8
         k = b_i 
         amplitude = 0.5 
 
@@ -288,7 +284,6 @@ class TwoElementInterferometer(Scene):
         
         params = VGroup(w_eq, b_eq).arrange(DOWN, aligned_edge=LEFT, buff=0.4).to_corner(UL)
 
-        # FIXED: Removed the [] brackets inside Write()
         self.play(Write(params)) 
         self.wait(2)
         
@@ -297,8 +292,6 @@ class TwoElementInterferometer(Scene):
             r = R + amplitude * np.cos(k * np.cos(t))
             return midpoint + np.array([r * np.cos(t), r * np.sin(t), 0])
 
-        # FIXED: Added 0.005 to t_range. This is the 'dt' step size. 
-        # Without this tiny step size, k=300 will look like a jagged, broken line!
         fringes = ParametricFunction(fringe_func, t_range=[0, PI, 0.005], color=YELLOW)
         
         fringe_eq_label = MathTex(r"\text{Fringe rate} \propto \cos\left(\frac{\omega b \cos\theta}{c}\right)", color=WHITE)
@@ -307,7 +300,6 @@ class TwoElementInterferometer(Scene):
         fringe_res_eq = MathTex(r"\text{Angular Resolution of Interferometer} \propto \frac{\lambda}{b}", color=WHITE).scale(0.75)
         fringe_res_eq_2 = MathTex(r"\Delta \theta \propto \frac{\lambda}{b}", color=WHITE).scale(0.75).to_corner(UL)
 
-        # FIXED: Consolidated run_time to the main play call so the Create and Write sync up
         self.play(Create(fringes), Write(fringe_eq_label), run_time=3)
         self.wait(2)
         self.play(ReplacementTransform(fringe_eq_label,fringe_res_eq))
@@ -329,18 +321,15 @@ class TwoElementInterferometer(Scene):
             r = R + amplitude * np.cos(k * np.cos(t))
             return midpoint + np.array([r * np.cos(t), r * np.sin(t), 0])
 
-        # FIXED: Added 0.005 to t_range. This is the 'dt' step size. 
-        # Without this tiny step size, k=300 will look like a jagged, broken line!
         fringes_2 = ParametricFunction(fringe_func, t_range=[0, PI, 0.005], color=RED)
 
-        # FIXED: Consolidated run_time to the main play call so the Create and Write sync up
         self.play(Create(fringes_2, run_time=3), FadeOut(dome_label, run_time=0.5))
         self.wait(5)
 
         self.play(FadeOut(fringes), FadeOut(params))
         self.wait(1)
 
-        # 2. Modulate the fringes with a Gaussian envelope (Primary Beam)
+        # Modulate the fringes with a Gaussian envelope (Primary Beam)
         pointing_center = ValueTracker(0.0) 
         sigma = 0.25  # Roughly 14 degrees for the primary beam width
         
@@ -356,7 +345,7 @@ class TwoElementInterferometer(Scene):
             )
         )
 
-        # --- NEW: White Gaussian Envelope Curve ---
+        # White Gaussian Envelope Curve ---
         envelope_curve = always_redraw(
             lambda: ParametricFunction(
                 lambda t: midpoint + np.array([
@@ -364,7 +353,6 @@ class TwoElementInterferometer(Scene):
                     (R + amplitude * np.exp(-0.5 * ((t - pointing_center.get_value()) / sigma)**2)) * np.sin(t),
                     0
                 ]),
-                # Dynamically clamp the domain so it only draws a short arc over the bump
                 t_range=[
                     max(0.0, pointing_center.get_value() - 2.5 * sigma), 
                     min(PI, pointing_center.get_value() + 2.5 * sigma), 
@@ -378,9 +366,7 @@ class TwoElementInterferometer(Scene):
         self.play(ReplacementTransform(fringe_res_eq,fringe_res_eq_2),run_time=1)
         self.wait(1)
         self.play(Write(helper_text),run_time=1)
-        # self.play(ReplacementTransform(fringe_eq_label,helper_text),run_time=1)
         self.wait(2)
-        # Seamlessly swap the static fringes for the dynamically modulated ones
         self.add(convolved_fringes_2, envelope_curve)
         self.remove(fringes_2)
         
@@ -390,12 +376,9 @@ class TwoElementInterferometer(Scene):
         # Stop for 2 seconds at PI/4
         self.wait(2)
         
-        # Continue animating from PI/4 to PI
         self.play(pointing_center.animate.set_value(PI/2), run_time=6, rate_func=smooth)
         self.wait(1)
 
-        # 3. Add the double-sided arrow for the Primary Beam width
-        # Dynamically grabs the final pointing center (PI) so it aligns perfectly
         final_angle = pointing_center.get_value()
         beam_arrow = DoubleArrow(
             start=midpoint + np.array([(R - 0.8) * np.cos(final_angle + 1.5*sigma), (R - 0.8) * np.sin(final_angle + 1.5*sigma), 0]),
@@ -414,7 +397,7 @@ class TwoElementInterferometer(Scene):
         self.play(FadeOut(beam_arrow), FadeOut(beam_label))
         
         # Cleanup the signal flow and correlator elements safely
-        signal_manager.clear_updaters() # CRITICAL: Stop the background updater first
+        signal_manager.clear_updaters()
         self.play(
             FadeOut(correlator), FadeOut(wire1), FadeOut(wire2),
             FadeOut(v1_label), FadeOut(v2_label), FadeOut(signal_dots),
@@ -422,15 +405,13 @@ class TwoElementInterferometer(Scene):
         )
         self.wait(1)
 
-        # 2. Add the 3rd Antenna (1/3 of the distance between existing antennas)
-        # We grab the current on-screen coordinates of the zoomed-out antennas
+        # Calculate the position for the third antenna based on the current positions of a1 and a2
         p1_current = self.a1.get_start()
         p2_current = self.a2.get_start()
         
         # A simple vector translation from antenna 1
         vec_to_p3 = (p2_current - p1_current) * (1.0 / 3.0)
         
-        # Because we copy a1, it automatically inherits the scale and positioning of the zoom!
         a3 = self.a1.copy()
         dish3 = self.dish1.copy()
         antenna3 = VGroup(a3, dish3)
@@ -583,7 +564,7 @@ class TwoElementInterferometer(Scene):
             wave_sum = np.cos(k_16 * np.cos(t)) + np.cos(k_32 * np.cos(t)) + 2*np.cos(k_48 * np.cos(t)) + np.cos(k_64 * np.cos(t)) + np.cos(k_96 * np.cos(t))
             return R + (amplitude/6) * envelope * wave_sum
 
-        # 5. Create the Parametric Curves (dt=0.001 is required here to prevent visual aliasing)
+        # Create the Parametric Curves (dt=0.001 is required here to prevent visual aliasing)
         fringe_16_curve = ParametricFunction(
             lambda t: midpoint + np.array([f_16(t) * np.cos(t), f_16(t) * np.sin(t), 0]),
             t_range=[0, PI, 0.001], color=PURPLE, stroke_opacity=0.3
@@ -649,4 +630,22 @@ class TwoElementInterferometer(Scene):
         )
         self.wait(5)
 
+        # Fade everything out and add references on screen
+        self.play(
+            FadeOut(full_system), FadeOut(dome), FadeOut(dome_label),
+            FadeOut(params_2), FadeOut(helper_text), FadeOut(synth_beam_curve),
+            FadeOut(synth_label), FadeOut(synth_arrow), FadeOut(antenna3), FadeOut(antenna4), FadeOut(baselines_text), FadeOut(four_baselines_text), FadeOut(fringe_res_eq_2) 
+        )
+        self.wait(1)
+
+        ref_text = Text("References", font_size=36, color=BLUE)
+        ref_1 = Text("1. Thompson, Moran, & Swenson 2017, Interferometry and Synthesis in Radio Astronomy", font_size=24).next_to(ref_text, DOWN, buff=0.5)
+        ref_2 = Text("2. Ransom & Condon 2016, Essential Radio Astronomy", font_size=24).next_to(ref_1, DOWN, buff=0.3)
+        references_group = VGroup(ref_text, ref_1, ref_2)
+        
+        references_group.move_to(ORIGIN) 
+
+        self.play(Write(ref_text), Write(ref_1), Write(ref_2))
+        self.wait(5)
+        
 

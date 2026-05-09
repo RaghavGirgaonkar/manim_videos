@@ -1,0 +1,3 @@
+# Commands to compile and generate the videos: run these in the command line
+
+manim -pql twoelementinterferometer.py TwoElementInterferometer
